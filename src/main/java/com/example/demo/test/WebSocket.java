@@ -1,8 +1,7 @@
 
 package com.example.demo.test;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnMessage;
@@ -20,7 +19,7 @@ public class WebSocket {
      * 웹소켓 세션을 담는 ArrayList
      */
     private static ArrayList<Session> sessionList = new ArrayList<Session>();
-
+    private static Map<String, String> sessionName = new HashMap<>();
 
     public List<Session> getSessionList() {
         return sessionList;
@@ -49,11 +48,16 @@ public class WebSocket {
     @OnMessage
     public String handleMessage(String message, Session session) {
         if (session != null) {
-            String sessionId = session.getId();
-            System.out.println("message is arrived. sessionId == [" + sessionId + "] / message == [" + message + "]");
+            if (message.startsWith("initname:")) {
+                sessionName.put(session.getId(), message.substring(9));
+                System.out.println("이름 설정 완료");
+            } else {
+                String sessionId = session.getId();
+                System.out.println("message is arrived. sessionId == [" + sessionId + "] / message == [" + message + "]");
+                sendMessageToAll("[" + sessionName.get(sessionId) + "] " + message);
+            }
 
             // 웹소켓 연결 성립되어 있는 모든 사용자에게 메시지 전송
-            sendMessageToAll("[USER-" + sessionId + "] " + message);
         }
 
         return null;
@@ -114,7 +118,6 @@ public class WebSocket {
         return true;
     }
 }
-
 
 
 //import java.util.ArrayList;
