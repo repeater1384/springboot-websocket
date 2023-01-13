@@ -13,30 +13,30 @@
             /**
              * 웹소켓 사용자 연결 성립하는 경우 호출
              */
-            g_webSocket.onopen = function (message) {
-                addLineToChatBox("Server is connected.");
+            g_webSocket.onopen = async function (message) {
+                await addLineToChatBox("Server is connected.");
             };
 
 
             /**
              * 웹소켓 메시지(From Server) 수신하는 경우 호출
              */
-            g_webSocket.onmessage = function (message) {
-                addLineToChatBox(message.data);
+            g_webSocket.onmessage = async function (message) {
+                await addLineToChatBox(message.data);
             };
 
             /**
              * 웹소켓 사용자 연결 해제하는 경우 호출
              */
-            g_webSocket.onclose = function (message) {
-                addLineToChatBox("Server is disconnected.");
+            g_webSocket.onclose = async function (message) {
+                await addLineToChatBox("Server is disconnected.");
             };
 
             /**
              * 웹소켓 에러 발생하는 경우 호출
              */
-            g_webSocket.onerror = function (message) {
-                addLineToChatBox("Error!");
+            g_webSocket.onerror = async function (message) {
+                await addLineToChatBox("Error!");
             };
         }
 
