@@ -17,9 +17,8 @@ public class MainRestController {
     @GetMapping(value = "/customer_len")
     public ResponseEntity<?> main() {
         String msg = "" + webSocket.getSessionList();
-        System.out.println("api요청");
+        System.out.println("api");
         return new ResponseEntity<String>(msg, HttpStatus.OK);
-
     }
 
 }
