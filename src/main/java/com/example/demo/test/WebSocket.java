@@ -147,7 +147,7 @@ public class WebSocket {
     public List<String> getUserNameList(){
         List<String> result = new ArrayList<>();
         for(String id : id2name.keySet()){
-            result.add(sessionName.get(id));
+            result.add(id2name.get(id));
         }
         return result;
     }
