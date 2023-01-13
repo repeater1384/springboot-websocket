@@ -6,7 +6,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import javax.websocket.Session;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+
 @CrossOrigin("*")
 @RestController
 @RequestMapping("/api")
@@ -15,10 +19,22 @@ public class MainRestController {
     WebSocket webSocket;
 
     @GetMapping(value = "/customer_len")
-    public ResponseEntity<?> main() {
-        String msg = "" + webSocket.getSessionList();
-        System.out.println("api");
+    public ResponseEntity<?> customer_len() {
+        String msg = "" + webSocket.getSessionList().size();
         return new ResponseEntity<String>(msg, HttpStatus.OK);
+    }
+
+    @GetMapping(value = "/customer_list")
+    public ResponseEntity<?> customer_list() {
+        List<String> result = new ArrayList<>();
+        for (Session singleSession :
+                webSocket.getSessionList()) {
+            if (singleSession.isOpen()) {
+                result.add(singleSession.getId());
+            }
+        }
+
+        return new ResponseEntity<List<String>>(result, HttpStatus.OK);
     }
 
 }

@@ -3,6 +3,7 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>웹소켓 테스트 페이지</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script type="text/javascript">
         var g_webSocket = null;
         window.onload = function () {
@@ -101,14 +102,36 @@
             }
         }
 
+        function reload_user_list(){
+            var inputMsgBox = document.getElementById("userList");
+            axios
+                .get("http://43.201.118.242:8080/api/customer_list")
+                .then(function (result) {
+
+                    inputMsgBox.value = result.data + "\n";
+                })
+
+                .catch(function (error) {
+
+                    console.log("에러 발생 : ", error);
+
+                });
+
+            console.log("바로 실행 로그");
+        }
+
 
     </script>
 </head>
 <body>
+<h1>웹소캣 채팅 + 배포</h1>
 <input id="inputMsgBox" style="width: 250px;" type="text" onkeypress="inputMsgBox_onkeypress()">
 <input id="sendButton" value="Send" type="button" onclick="sendButton_onclick()">
 <input id="disconnectButton" value="Disconnect" type="button" onclick="disconnectButton_onclick()">
 <br/>
 <textarea id="chatBoxArea" style="width: 100%;" rows="10" cols="50" readonly="readonly"></textarea>
+<br/>
+<textarea id="userList" style="width: 100%;" rows="10" cols="50" readonly="readonly"></textarea>
+<button onclick="reload_user_list()">유저 목록 갱신</button>
 </body>
 </html>
