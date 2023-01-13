@@ -9,8 +9,8 @@
 <script>
     function check() {
         axios
-            .get("http://localhost:8080/api/customer_len")
-            // .get("http://43.201.118.242:8080/api/customer_len")
+            // .get("http://localhost:8080/api/customer_len")
+            .get("http://43.201.118.242:8080/api/customer_len")
             .then(function (result) {
                 var chatBoxArea = document.getElementById("list");
                 chatBoxArea.value = result.data + "\n";
