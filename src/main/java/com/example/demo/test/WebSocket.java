@@ -44,7 +44,7 @@ public class WebSocket {
      * 웹소켓 메시지(From Client) 수신하는 경우 호출
      */
     @OnMessage
-    synchronized public String handleMessage(String message, Session session) {
+    synchronized public void handleMessage(String message, Session session) {
         if (session != null) {
             String sessionId = session.getId();
             System.out.println("message is arrived. sessionId == [" + sessionId + "] / message == [" + message + "]");
@@ -52,7 +52,7 @@ public class WebSocket {
             // 웹소켓 연결 성립되어 있는 모든 사용자에게 메시지 전송
             sendMessageToAll("[USER-" + sessionId + "] " + message);
         }
-        return null;
+//        return null;
     }
 
 
