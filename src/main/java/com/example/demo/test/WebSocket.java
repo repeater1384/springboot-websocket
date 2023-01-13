@@ -33,11 +33,11 @@ public class WebSocket {
         if (session != null) {
             String sessionId = session.getId();
 
-            System.out.println("client is connected. sessionId == [" + sessionId + "]");
+            System.out.println("client is connected. sessionId == [" + sessionName.get(session.getId()) + "]");
             sessionList.add(session);
 
             // 웹소켓 연결 성립되어 있는 모든 사용자에게 메시지 전송
-            sendMessageToAll("***** [USER-" + sessionId + "] is connected. *****");
+            sendMessageToAll("***** [USER-" + sessionName.get(session.getId()) + "] is connected. *****");
         }
     }
 
@@ -50,10 +50,10 @@ public class WebSocket {
         if (session != null) {
             if (message.startsWith("initname:")) {
                 sessionName.put(session.getId(), message.substring(9));
-                System.out.println("이름 설정 완료");
+                System.out.println(sessionName.get(session.getId()) + "이름 설정 완료");
             } else {
                 String sessionId = session.getId();
-                System.out.println("message is arrived. sessionId == [" + sessionId + "] / message == [" + message + "]");
+                System.out.println("message is arrived. sessionId == [" + sessionName.get(sessionId) + "] / message == [" + message + "]");
                 sendMessageToAll("[" + sessionName.get(sessionId) + "] " + message);
             }
 
@@ -71,9 +71,9 @@ public class WebSocket {
     public void handleClose(Session session) {
         if (session != null) {
             String sessionId = session.getId();
-            System.out.println("client is disconnected. sessionId == [" + sessionId + "]");
+            System.out.println("client is disconnected. sessionId == [" + sessionName.get(sessionId) + "]");
             // 웹소켓 연결 성립되어 있는 모든 사용자에게 메시지 전송
-            sendMessageToAll("***** [USER-" + sessionId + "] is disconnected. *****");
+            sendMessageToAll("***** [USER-" + sessionName.get(sessionId) + "] is disconnected. *****");
         }
     }
 
