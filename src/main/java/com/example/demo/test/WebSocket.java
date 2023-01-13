@@ -99,7 +99,7 @@ public class WebSocket {
             // 웹소켓 연결 성립되어 있는 모든 사용자에게 메시지 전송
             sendMessageToAll(String.format("[%s] 님이 접속을 종료하였습니다.", id2name.get(session.getId())));
             sessionMap.remove(sessionId);
-            sessionName.remove(name);
+//            sessionName.remove(name);
             id2name.remove(sessionId);
         }
     }
@@ -146,8 +146,8 @@ public class WebSocket {
 
     public List<String> getUserNameList(){
         List<String> result = new ArrayList<>();
-        for(String name : sessionName.keySet()){
-            result.add(name);
+        for(String id : id2name.keySet()){
+            result.add(sessionName.get(id));
         }
         return result;
     }
