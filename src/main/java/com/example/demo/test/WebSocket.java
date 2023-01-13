@@ -18,12 +18,17 @@ public class WebSocket {
     /**
      * 웹소켓 세션을 담는 ArrayList
      */
-    private static ArrayList<Session> sessionList = new ArrayList<Session>();
-    private static Map<String, String> sessionName = new HashMap<>();
+    // session_id, session
+    private static Map<String, Session> sessionMap = Collections.synchronizedMap(new HashMap<>());
+    // name, session_id
+    private static Map<String, String> sessionName = Collections.synchronizedMap(new HashMap<>());
+    // session_id, name
+    private static Map<String, String> id2name = Collections.synchronizedMap(new HashMap<>());
 
-    public List<Session> getSessionList() {
-        return sessionList;
-    }
+
+//    public Set<MapString,Session> getSessionList() {
+//        return sessionMap.entrySet();
+//    }
 
     /**
      * 웹소켓 사용자 연결 성립하는 경우 호출
@@ -32,12 +37,11 @@ public class WebSocket {
     public void handleOpen(Session session) {
         if (session != null) {
             String sessionId = session.getId();
+            sessionMap.put(sessionId, session);
 
-            System.out.println("client is connected. sessionId == [" + sessionName.get(session.getId()) + "]");
-            sessionList.add(session);
-
+//            System.out.println("client is connected. sessionId == [" + sessionName.get(session.getId()) + "]");
             // 웹소켓 연결 성립되어 있는 모든 사용자에게 메시지 전송
-            sendMessageToAll("***** [USER-" + sessionName.get(session.getId()) + "] is connected. *****");
+//            sendMessageToAll("***** [USER-" + sessionName.get(session.getId()) + "] is connected. *****");
         }
     }
 
@@ -48,12 +52,32 @@ public class WebSocket {
     @OnMessage
     public String handleMessage(String message, Session session) {
         if (session != null) {
-            if (message.startsWith("initname:")) {
-                sessionName.put(session.getId(), message.substring(9));
-                System.out.println(sessionName.get(session.getId()) + "이름 설정 완료");
+
+            String[] temp = message.split(":");
+            String name = temp[0];
+            String msg = temp[1];
+
+            // 처음 접속시.
+            if (msg.equals("test")) {
+                // 연결 중이였다가 끊어진 후, 다시 연결된 경우.
+                if (sessionName.containsKey(name)) {
+//                    String origSessionId = sessionName.get(name);
+                    String newSessionId = session.getId();
+                    sessionName.put(name, newSessionId);
+                    id2name.put(newSessionId, name);
+//                    sessionMap.put(origSessionId, session);
+                    sendMessageToAll(String.format("[%s] 님이 다시 접속하였습니다", name));
+
+                }
+                // 처음 연결한 경우.
+                else {
+                    String newSessionId = session.getId();
+                    sessionName.put(name, newSessionId);
+                    id2name.put(newSessionId, name);
+                    sendMessageToAll(String.format("[%s] 님이 처음 접속하였습니다", name));
+                }
             } else {
                 String sessionId = session.getId();
-                System.out.println("message is arrived. sessionId == [" + sessionName.get(sessionId) + "] / message == [" + message + "]");
                 sendMessageToAll("[" + sessionName.get(sessionId) + "] " + message);
             }
 
@@ -71,9 +95,8 @@ public class WebSocket {
     public void handleClose(Session session) {
         if (session != null) {
             String sessionId = session.getId();
-            System.out.println("client is disconnected. sessionId == [" + sessionName.get(sessionId) + "]");
             // 웹소켓 연결 성립되어 있는 모든 사용자에게 메시지 전송
-            sendMessageToAll("***** [USER-" + sessionName.get(sessionId) + "] is disconnected. *****");
+            sendMessageToAll(String.format("[%s] 님이 접속을 종료하였습니다.", id2name.get(session.getId())));
         }
     }
 
@@ -91,31 +114,38 @@ public class WebSocket {
      * 웹소켓 연결 성립되어 있는 모든 사용자에게 메시지 전송
      */
     private boolean sendMessageToAll(String message) {
-        if (sessionList == null) {
-            return false;
-        }
+//        if (sessionName == null) {
+//            return false;
+//        }
 
-        int sessionCount = sessionList.size();
+        int sessionCount = sessionName.size();
         if (sessionCount < 1) {
             return false;
         }
 
         Session singleSession = null;
 
-        for (int i = 0; i < sessionCount; i++) {
-            singleSession = sessionList.get(i);
+        for (String name : sessionName.keySet()) {
+
+            singleSession = sessionMap.get(sessionName.get(name));
             if (singleSession == null) {
                 continue;
             }
-
             if (!singleSession.isOpen()) {
                 continue;
             }
-
-            sessionList.get(i).getAsyncRemote().sendText(message);
+            singleSession.getAsyncRemote().sendText(message);
         }
 
         return true;
+    }
+
+    public List<String> getUserNameList(){
+        List<String> result = new ArrayList<>();
+        for(String name : sessionName.keySet()){
+            result.add(name);
+        }
+        return result;
     }
 }
 

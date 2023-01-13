@@ -18,7 +18,7 @@
              */
             g_webSocket.onopen = async function (message) {
                 addLineToChatBox("Server is connected.");
-                g_webSocket.send("initname:"+name);
+                g_webSocket.send(name+":"+"test");
             };
 
 
@@ -74,7 +74,7 @@
             }
 
             // 서버로 메시지 전송
-            g_webSocket.send(inputMsgBox.value);
+            g_webSocket.send(name+":"+inputMsgBox.value);
             inputMsgBox.value = "";
             inputMsgBox.focus();
 
