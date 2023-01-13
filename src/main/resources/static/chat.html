@@ -6,10 +6,10 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script type="text/javascript">
         var g_webSocket = null;
-        window.onload = function () {
+        window.onload = async function () {
             const searchParams = new URLSearchParams(location.search);
             const name = searchParams.get("name");
-            g_webSocket = new WebSocket("ws://43.201.118.242:8080/websocket");
+            g_webSocket = await new WebSocket("ws://43.201.118.242:8080/websocket");
             g_webSocket.send("initname:"+name);
             // g_webSocket = new WebSocket("ws://localhost:8080/websocket");
 
