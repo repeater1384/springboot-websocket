@@ -6,8 +6,8 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
         function enter() {
-            var name = document.getElementById("name").value;
-            axios.get("http://43.201.118.242:8080/chat", {'name': name}).then()
+            var name = document.getElementById("name").value
+            axios.get("http://43.201.118.242:8080/chat?name="+name).then()
         }
     </script>
 </head>
