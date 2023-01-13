@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+<script>
+    function check() {
+        axios
+            .get("http://43.201.118.242:8080/api/customer_len")
+            .then(function (result) {
+                console.log("통신 결과 : ", result);
+                console.log("status : ", result.status);
+                console.log("data : ", result.data);
+            })
+
+            .catch(function (error) {
+
+                console.log("에러 발생 : ", error);
+
+            });
+
+        console.log("바로 실행 로그");
+    }
+</script>
+<button onclick="check()">눌러주세용</button>
+<textarea id="list" style="width: 100%;" rows="10" cols="50" readonly="readonly"></textarea>
+</body>
+</html>
