@@ -95,8 +95,12 @@ public class WebSocket {
     public void handleClose(Session session) {
         if (session != null) {
             String sessionId = session.getId();
+            String name = id2name.get(sessionId);
             // 웹소켓 연결 성립되어 있는 모든 사용자에게 메시지 전송
             sendMessageToAll(String.format("[%s] 님이 접속을 종료하였습니다.", id2name.get(session.getId())));
+            sessionMap.remove(sessionId);
+            sessionName.remove(name);
+            id2name.remove(sessionId);
         }
     }
 
