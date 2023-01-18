@@ -25,6 +25,15 @@ dependencies {
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	// sockjs
+	implementation 'org.webjars:sockjs-client:1.5.1'
+// stomp
+	implementation 'org.webjars:stomp-websocket:2.3.4'
+// gson
+	implementation 'com.google.code.gson:gson:2.9.0'
+	// https://mvnrepository.com/artifact/com.googlecode.json-simple/json-simple
+	implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1'
+
 
 }
 

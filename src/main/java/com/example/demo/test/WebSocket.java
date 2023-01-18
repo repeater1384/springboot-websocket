@@ -1,47 +1,32 @@
 
 package com.example.demo.test;
 
-import java.util.*;
-import javax.websocket.OnClose;
-import javax.websocket.OnError;
-import javax.websocket.OnMessage;
-import javax.websocket.OnOpen;
-import javax.websocket.Session;
-import javax.websocket.server.ServerEndpoint;
-
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.springframework.stereotype.Component;
+
+import javax.websocket.*;
+import javax.websocket.server.ServerEndpoint;
+import java.util.*;
 
 @Component
 @ServerEndpoint("/websocket")
 public class WebSocket {
 
-    /**
-     * 웹소켓 세션을 담는 ArrayList
-     */
-    // session_id, session
-    private static Map<String, Session> sessionMap = Collections.synchronizedMap(new HashMap<>());
-    // name, session_id
-    private static Map<String, String> sessionName = Collections.synchronizedMap(new HashMap<>());
-    // session_id, name
-    private static Map<String, String> id2name = Collections.synchronizedMap(new HashMap<>());
+    private static Set<String> sessionSet = new HashSet<String>();
+    private static Map<String, Object> sessionId2Obj = new HashMap<>();
+    private static Map<String, Customer> customerMap = new HashMap<>();
+    private static Map<String, Seller> sellerMap = new HashMap<>();
+    private static Set<String> customersSet = new HashSet<String>();
+    private static Set<String> sellerSet = Collections.synchronizedSet(new HashSet<String>());
 
-
-//    public Set<MapString,Session> getSessionList() {
-//        return sessionMap.entrySet();
-//    }
-
-    /**
-     * 웹소켓 사용자 연결 성립하는 경우 호출
-     */
     @OnOpen
     public void handleOpen(Session session) {
         if (session != null) {
             String sessionId = session.getId();
-            sessionMap.put(sessionId, session);
-
-//            System.out.println("client is connected. sessionId == [" + sessionName.get(session.getId()) + "]");
-            // 웹소켓 연결 성립되어 있는 모든 사용자에게 메시지 전송
-//            sendMessageToAll("***** [USER-" + sessionName.get(session.getId()) + "] is connected. *****");
+            sessionSet.add(sessionId);
+            printInfo();
         }
     }
 
@@ -50,40 +35,41 @@ public class WebSocket {
      * 웹소켓 메시지(From Client) 수신하는 경우 호출
      */
     @OnMessage
-    public String handleMessage(String message, Session session) {
+    public String handleMessage(String jsonMessage, Session session) throws ParseException {
         if (session != null) {
-
-            String[] temp = message.split(":");
-            String name = temp[0];
-            String msg = temp[1];
-
-            // 처음 접속시.
-            if (msg.equals("test")) {
-                // 연결 중이였다가 끊어진 후, 다시 연결된 경우.
-                if (sessionName.containsKey(name)) {
-//                    String origSessionId = sessionName.get(name);
-                    String newSessionId = session.getId();
-                    sessionName.put(name, newSessionId);
-                    id2name.put(newSessionId, name);
-//                    sessionMap.put(origSessionId, session);
-                    sendMessageToAll(String.format("[%s] 님이 다시 접속하였습니다", name));
-
+            JSONParser parser = new JSONParser();
+            JSONObject obj = (JSONObject) parser.parse(jsonMessage);
+            System.out.println(jsonMessage);
+            String method = obj.get("method").toString();
+            Object object = null;
+            if (method.equals("init")) {
+                String id = obj.get("id").toString();
+                String name = obj.get("name").toString();
+                String wido = obj.get("wido").toString();
+                String gyungdo = obj.get("gyungdo").toString();
+                if (obj.get("type").toString().equals("판매자")) {
+                    Seller seller = Seller.builder().id(id).name(name).wido(wido).gyungdo(gyungdo).build();
+                    sellerSet.add(id);
+                    sellerMap.put(id, seller);
+                    System.out.println("판매자 입장");
+                    object = seller;
+                } else if (obj.get("type").toString().equals("고객")) {
+                    Customer customer = Customer.builder().id(id).name(name).wido(wido).gyungdo(gyungdo).build();
+                    customersSet.add(id);
+                    customerMap.put(id, customer);
+                    System.out.println("소비자 입장");
+                    object = customer;
                 }
-                // 처음 연결한 경우.
-                else {
-                    String newSessionId = session.getId();
-                    sessionName.put(name, newSessionId);
-                    id2name.put(newSessionId, name);
-                    sendMessageToAll(String.format("[%s] 님이 처음 접속하였습니다", name));
-                }
-            } else {
-                String sessionId = session.getId();
-                sendMessageToAll("[" + id2name.get(sessionId) + "] " + message);
+                sessionId2Obj.put(session.getId(), object);
+
+            } else if (method.equals("msg")) {
+                String msg = obj.get("msg").toString();
+                System.out.println(msg);
             }
+            printInfo();
 
-            // 웹소켓 연결 성립되어 있는 모든 사용자에게 메시지 전송
+
         }
-
         return null;
     }
 
@@ -95,12 +81,19 @@ public class WebSocket {
     public void handleClose(Session session) {
         if (session != null) {
             String sessionId = session.getId();
-            String name = id2name.get(sessionId);
-            // 웹소켓 연결 성립되어 있는 모든 사용자에게 메시지 전송
-            sendMessageToAll(String.format("[%s] 님이 접속을 종료하였습니다.", id2name.get(session.getId())));
-            sessionMap.remove(sessionId);
-//            sessionName.remove(name);
-            id2name.remove(sessionId);
+            sessionSet.remove(sessionId);
+            Object obj = sessionId2Obj.get(sessionId);
+            sessionId2Obj.remove(sessionId);
+            if (obj instanceof Customer) {
+                String id = ((Customer) obj).getId();
+                customersSet.remove(id);
+                customerMap.remove(id);
+            } else if (obj instanceof Seller) {
+                String id = ((Seller) obj).getId();
+                sellerSet.remove(id);
+                sellerMap.remove(id);
+            }
+            printInfo();
         }
     }
 
@@ -113,152 +106,59 @@ public class WebSocket {
         t.printStackTrace();
     }
 
+    public void printInfo() {
 
-    /**
-     * 웹소켓 연결 성립되어 있는 모든 사용자에게 메시지 전송
-     */
-    private boolean sendMessageToAll(String message) {
-//        if (sessionName == null) {
-//            return false;
-//        }
-
-        int sessionCount = sessionName.size();
-        if (sessionCount < 1) {
-            return false;
-        }
-
-        Session singleSession = null;
-
-        for (String name : sessionName.keySet()) {
-
-            singleSession = sessionMap.get(sessionName.get(name));
-            if (singleSession == null) {
-                continue;
-            }
-            if (!singleSession.isOpen()) {
-                continue;
-            }
-            singleSession.getAsyncRemote().sendText(message);
-        }
-
-        return true;
+        System.out.println(sessionSet);
+        System.out.println(customersSet);
+        System.out.println(sellerSet);
+        System.out.println(customerMap);
+        System.out.println(sellerMap);
+        System.out.println("------------------------------");
     }
 
-    public List<String> getUserNameList(){
-        List<String> result = new ArrayList<>();
-        for(String id : id2name.keySet()){
-            result.add(id2name.get(id));
+    public Set<String> getSessionSet() {
+        return this.sessionSet;
+    }
+
+    public double getDistance(String w1, String g1, String w2, String g2) {
+        double lat1 = Double.parseDouble(w1);
+        double lon1 = Double.parseDouble(g1);
+        double lat2 = Double.parseDouble(w2);
+        double lon2 = Double.parseDouble(g2);
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        double d = 6371 * c * 1000;    // Distance in m
+        return d;
+    }
+
+    public Set<Map<String, String>> getCustomerSet(String sellerId) {
+        Set<Map<String, String>> result = new HashSet<>();
+        Seller seller = sellerMap.get(sellerId);
+        String wido1 = seller.getWido();
+        String gyungdo1 = seller.getGyungdo();
+        for (String key : customersSet) {
+            Map<String, String> row = new HashMap<>();
+            Customer customer = customerMap.get(key);
+            row.put("id", customer.getId());
+            row.put("name", customer.getName());
+            row.put("wido", customer.getWido());
+            row.put("gyungdo", customer.getGyungdo());
+            row.put("dis", String.valueOf(getDistance(wido1, gyungdo1, customer.getWido(), customer.getGyungdo())));
+            result.add(row);
+        }
+        return result;
+    }
+
+    public Set<String> getSellerSet() {
+        Set<String> result = new HashSet<>();
+        for (String key :
+                sellerSet) {
+            result.add(sellerMap.get(key).getName());
+
         }
         return result;
     }
 }
-
-
-//import java.util.ArrayList;
-//import javax.websocket.OnClose;
-//import javax.websocket.OnError;
-//import javax.websocket.OnMessage;
-//import javax.websocket.OnOpen;
-//import javax.websocket.Session;
-//import javax.websocket.server.ServerEndpoint;
-//import org.springframework.stereotype.Component;
-//
-//@Component
-//@ServerEndpoint("/websocket”)
-//public class Websocket {
-//
-//    /**
-//     * 웹소켓 세션을 담는 ArrayList
-//     */
-//    private static ArrayList<Session> sessionList = new ArrayList<Session>();
-//
-//
-//    /**
-//     * 웹소켓 사용자 연결 성립하는 경우 호출
-//     */
-//    @OnOpen
-//    public void handleOpen(Session session) {
-//        if (session != null) {
-//            String sessionId = session.getId();
-//
-//            System.out.println("client is connected. sessionId == [" + sessionId + "]”);
-//            sessionList.add(session);
-//
-//            // 웹소켓 연결 성립되어 있는 모든 사용자에게 메시지 전송
-//            sendMessageToAll("***** [USER-" + sessionId + "] is connected. *****”);
-//        }
-//    }
-//
-//
-//    /**
-//     * 웹소켓 메시지(From Client) 수신하는 경우 호출
-//     */
-//    @OnMessage
-//    public String handleMessage(String message, Session session) {
-//        if (session != null) {
-//            String sessionId = session.getId();
-//            System.out.println("message is arrived. sessionId == [" + sessionId + "] / message == [" + message + "]”);
-//
-//            // 웹소켓 연결 성립되어 있는 모든 사용자에게 메시지 전송
-//            sendMessageToAll("[USER-" + sessionId + "] " + message);
-//        }
-//
-//        return null;
-//    }
-//
-//
-//    /**
-//     * 웹소켓 사용자 연결 해제하는 경우 호출
-//     */
-//    @OnClose
-//    public void handleClose(Session session) {
-//        if (session != null) {
-//            String sessionId = session.getId();
-//            System.out.println("client is disconnected. sessionId == [" + sessionId + "]”);
-//
-//            // 웹소켓 연결 성립되어 있는 모든 사용자에게 메시지 전송
-//            sendMessageToAll("***** [USER-" + sessionId + "] is disconnected. *****”);
-//        }
-//    }
-//
-//
-//    /**
-//     * 웹소켓 에러 발생하는 경우 호출
-//     */
-//    @OnError
-//    public void handleError(Throwable t) {
-//        t.printStackTrace();
-//    }
-//
-//
-//    /**
-//     * 웹소켓 연결 성립되어 있는 모든 사용자에게 메시지 전송
-//     */
-//    private boolean sendMessageToAll(String message) {
-//        if (sessionList == null) {
-//            return false;
-//        }
-//
-//        int sessionCount = sessionList.size();
-//        if (sessionCount < 1) {
-//            return false;
-//        }
-//
-//        Session singleSession = null;
-//
-//        for (int i = 0; i < sessionCount; i++) {
-//            singleSession = sessionList.get(i);
-//            if (singleSession == null) {
-//                continue;
-//            }
-//
-//            if (!singleSession.isOpen()) {
-//                continue;
-//            }
-//
-//            sessionList.get(i).getAsyncRemote().sendText(message);
-//        }
-//
-//        return true;
-//    }
-//}

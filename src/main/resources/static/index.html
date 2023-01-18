@@ -7,7 +7,13 @@
     <script>
         function enter() {
             var name = document.getElementById("name").value
-            location.href="http://43.201.118.242:8080/chat?name="+name
+            var type = document.getElementById("type").value
+            var wido = document.getElementById("wido").value
+            var gyungdo = document.getElementById("gyungdo").value
+            var id = document.getElementById("id").value
+            // var basic_address = "localhost:8080"
+            var basic_address = "43.201.118.242:8080"
+            location.href = `http://${basic_address}/chat?name=${name}&type=${type}&wido=${wido}&gyungdo=${gyungdo}&id=${id}`
             // axios.get().then()
         }
     </script>
@@ -15,6 +21,10 @@
 <body>
 <h1>웹소캣 채팅 + 배포</h1>
 이름 : <input id="name">
+판매자/고객 : <input id="type">
+위도 : <input id="wido">
+경도 : <input id="gyungdo">
+ID : <input id="id">
 <button onclick="enter()">입장</button>
 </body>
 </html>
