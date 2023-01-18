@@ -24,6 +24,7 @@ public class WebSocket {
     private static Set<String> customersSet = new HashSet<String>();
     private static Set<String> sellerSet = Collections.synchronizedSet(new HashSet<String>());
 
+    static Random random = new Random();
     static boolean runCheck = false;
 
     @OnOpen
@@ -42,14 +43,16 @@ public class WebSocket {
                         System.out.println(now);  // 06:20:57.008731300
                         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH시 mm분 ss초");
                         String formatedNow = now.format(formatter);
-//                        System.out.println(formatedNow);  // 06시 20분 57초
-                        sendMessageToAll(formatedNow);
+                        int randInt = random.nextInt();
+                        String msg = String.format("{%s} : {%d}{%s}",formatedNow, randInt,"서버에서 보내는 랜덤메세지" );
+                        sendMessageToAll(msg);
                     }
                 };
                 runCheck = true;
                 Timer timer = new Timer(true);
-                timer.scheduleAtFixedRate(task, 0, 1000);
-            };
+                timer.scheduleAtFixedRate(task, 0, 3000);
+            }
+            ;
         }
     }
 
