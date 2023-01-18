@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Component
@@ -15,18 +17,39 @@ import java.util.*;
 public class WebSocket {
 
     private static Set<String> sessionSet = new HashSet<String>();
+    private static Map<String, Session> sessionMap = new HashMap<>();
     private static Map<String, Object> sessionId2Obj = new HashMap<>();
     private static Map<String, Customer> customerMap = new HashMap<>();
     private static Map<String, Seller> sellerMap = new HashMap<>();
     private static Set<String> customersSet = new HashSet<String>();
     private static Set<String> sellerSet = Collections.synchronizedSet(new HashSet<String>());
 
+    static boolean runCheck = false;
+
     @OnOpen
     public void handleOpen(Session session) {
         if (session != null) {
             String sessionId = session.getId();
             sessionSet.add(sessionId);
+            sessionMap.put(sessionId, session);
             printInfo();
+
+            if (!runCheck) {
+                TimerTask task = new TimerTask() {
+                    @Override
+                    public void run() {
+                        LocalTime now = LocalTime.now();
+                        System.out.println(now);  // 06:20:57.008731300
+                        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH시 mm분 ss초");
+                        String formatedNow = now.format(formatter);
+//                        System.out.println(formatedNow);  // 06시 20분 57초
+                        sendMessageToAll(formatedNow);
+                    }
+                };
+                runCheck = true;
+                Timer timer = new Timer(true);
+                timer.scheduleAtFixedRate(task, 0, 1000);
+            };
         }
     }
 
@@ -67,8 +90,6 @@ public class WebSocket {
                 System.out.println(msg);
             }
             printInfo();
-
-
         }
         return null;
     }
@@ -161,4 +182,29 @@ public class WebSocket {
         }
         return result;
     }
+
+    private boolean sendMessageToAll(String message) {
+        int sessionCount = sessionSet.size();
+        if (sessionCount < 1) {
+            return false;
+        }
+
+        Session singleSession = null;
+
+        for (String name : sessionSet) {
+
+            singleSession = sessionMap.get(name);
+            if (singleSession == null) {
+                continue;
+            }
+            if (!singleSession.isOpen()) {
+                continue;
+            }
+            singleSession.getAsyncRemote().sendText(message);
+        }
+
+        return true;
+    }
+
+
 }
