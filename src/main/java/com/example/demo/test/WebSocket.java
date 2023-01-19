@@ -199,6 +199,8 @@ public class WebSocket {
     }
 
     public Set<Map<String, String>> getCustomerSet(String sellerId) {
+        System.out.println(refreshMap);
+
         Set<Map<String, String>> result = new HashSet<>();
         Seller seller = sellerMap.get(sellerId);
         String wido1 = seller.getWido();
