@@ -43,14 +43,14 @@ public class WebSocket {
                         System.out.println(now);  // 06:20:57.008731300
                         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH시 mm분 ss초");
                         String formatedNow = now.format(formatter);
-                        int randInt = random.nextInt();
-                        String msg = String.format("{%s} : {%d}{%s}",formatedNow, randInt,"서버에서 보내는 랜덤메세지" );
+                        int randInt = Math.abs(random.nextInt()) % 100;
+                        String msg = String.format("{%s} : [{%d}]{%s}", formatedNow, randInt, "서버에서 보내는 랜덤메세지 입니다.");
                         sendMessageToAll(msg);
                     }
                 };
                 runCheck = true;
                 Timer timer = new Timer(true);
-                timer.scheduleAtFixedRate(task, 0, 3000);
+                timer.scheduleAtFixedRate(task, 0, 15000);
             }
             ;
         }
@@ -90,7 +90,19 @@ public class WebSocket {
 
             } else if (method.equals("msg")) {
                 String msg = obj.get("msg").toString();
-                System.out.println(msg);
+                StringBuilder sb = new StringBuilder();
+                object = sessionId2Obj.get(session.getId());
+                if (object instanceof Customer) {
+                    String id = ((Customer) object).getId();
+                    String name = customerMap.get(id).getName();
+                    sb.append("[고객/").append(name).append("]");
+                } else if (object instanceof Seller) {
+                    String id = ((Seller) object).getId();
+                    String name = sellerMap.get(id).getName();
+                    sb.append("[고객/").append(name).append("]");
+                }
+                sb.append(" : ").append(msg);
+                sendMessageToAll(sb.toString());
             }
             printInfo();
         }
