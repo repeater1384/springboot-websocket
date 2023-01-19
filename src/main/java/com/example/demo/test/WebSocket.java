@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
+import java.io.IOException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -61,7 +62,7 @@ public class WebSocket {
      * 웹소켓 메시지(From Client) 수신하는 경우 호출
      */
     @OnMessage
-    public String handleMessage(String jsonMessage, Session session) throws ParseException {
+    public String handleMessage(String jsonMessage, Session session) throws ParseException, IOException {
         if (session != null) {
             JSONParser parser = new JSONParser();
             JSONObject obj = (JSONObject) parser.parse(jsonMessage);
@@ -74,12 +75,23 @@ public class WebSocket {
                 String wido = obj.get("wido").toString();
                 String gyungdo = obj.get("gyungdo").toString();
                 if (obj.get("type").toString().equals("판매자")) {
+                    if (sellerSet.contains(id)){
+                        sendMessageToAll("이미 세션에 존재하는 판매자가 입장을 시도합니다.");
+                        session.close();
+                        return null;
+                        
+                    }
                     Seller seller = Seller.builder().id(id).name(name).wido(wido).gyungdo(gyungdo).build();
                     sellerSet.add(id);
                     sellerMap.put(id, seller);
                     System.out.println("판매자 입장");
                     object = seller;
                 } else if (obj.get("type").toString().equals("고객")) {
+                    if (customersSet.contains(id)){
+                        sendMessageToAll("이미 세션에 존재하는 고객이 입장을 시도합니다.");
+                        session.close();
+                        return null;
+                    }
                     Customer customer = Customer.builder().id(id).name(name).wido(wido).gyungdo(gyungdo).build();
                     customersSet.add(id);
                     customerMap.put(id, customer);
@@ -99,7 +111,7 @@ public class WebSocket {
                 } else if (object instanceof Seller) {
                     String id = ((Seller) object).getId();
                     String name = sellerMap.get(id).getName();
-                    sb.append("[고객/").append(name).append("]");
+                    sb.append("[판매자/").append(name).append("]");
                 }
                 sb.append(" : ").append(msg);
                 sendMessageToAll(sb.toString());
