@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -24,6 +25,7 @@ public class WebSocket {
     private static Map<String, Seller> sellerMap = new HashMap<>();
     private static Set<String> customersSet = new HashSet<String>();
     private static Set<String> sellerSet = Collections.synchronizedSet(new HashSet<String>());
+    private static Map<String, LocalTime> refreshMap = new HashMap<>();
 
     static Random random = new Random();
     static boolean runCheck = false;
@@ -75,11 +77,14 @@ public class WebSocket {
                 String wido = obj.get("wido").toString();
                 String gyungdo = obj.get("gyungdo").toString();
                 if (obj.get("type").toString().equals("판매자")) {
-                    if (sellerSet.contains(id)){
-                        sendMessageToAll("이미 세션에 존재하는 판매자가 입장을 시도합니다.");
-                        session.close();
-                        return null;
-                        
+                    if (refreshMap.containsKey(id + "판매자")) {
+                        LocalTime first = refreshMap.get(id + "판매자");
+                        LocalTime second = LocalTime.now();
+                        if (Duration.between(first, second).getSeconds() <= 1) {
+                            sendMessageToAll("[판매자/" + name + "] 님이 새로고침 하셨어요~~");
+                        } else {
+                            sendMessageToAll("[판매자/" + name + "] 님이 다시 들어오셨어요~~");
+                        }
                     }
                     Seller seller = Seller.builder().id(id).name(name).wido(wido).gyungdo(gyungdo).build();
                     sellerSet.add(id);
@@ -87,10 +92,14 @@ public class WebSocket {
                     System.out.println("판매자 입장");
                     object = seller;
                 } else if (obj.get("type").toString().equals("고객")) {
-                    if (customersSet.contains(id)){
-                        sendMessageToAll("이미 세션에 존재하는 고객이 입장을 시도합니다.");
-                        session.close();
-                        return null;
+                    if (refreshMap.containsKey(id + "고객")) {
+                        LocalTime first = refreshMap.get(id + "고객");
+                        LocalTime second = LocalTime.now();
+                        if (Duration.between(first, second).getSeconds() <= 1) {
+                            sendMessageToAll("[고객/" + name + "] 님이 새로고침 하셨어요~~");
+                        } else {
+                            sendMessageToAll("[고객/" + name + "] 님이 다시 들어오셨어요~~");
+                        }
                     }
                     Customer customer = Customer.builder().id(id).name(name).wido(wido).gyungdo(gyungdo).build();
                     customersSet.add(id);
@@ -130,17 +139,24 @@ public class WebSocket {
         if (session != null) {
             String sessionId = session.getId();
             sessionSet.remove(sessionId);
+
             Object obj = sessionId2Obj.get(sessionId);
             sessionId2Obj.remove(sessionId);
+            String type = null;
+            String id = null;
             if (obj instanceof Customer) {
-                String id = ((Customer) obj).getId();
+                type = "고객";
+                id = ((Customer) obj).getId();
                 customersSet.remove(id);
                 customerMap.remove(id);
             } else if (obj instanceof Seller) {
-                String id = ((Seller) obj).getId();
+                type = "판매자";
+                id = ((Seller) obj).getId();
                 sellerSet.remove(id);
                 sellerMap.remove(id);
             }
+
+            refreshMap.put(id + type, LocalTime.now());
             printInfo();
         }
     }
