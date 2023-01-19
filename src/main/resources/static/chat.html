@@ -187,7 +187,7 @@
         }
         async function ok(){
             console.log("ok");
-            await g_webSocket.send(JSON.stringify({'method': 'msg', 'msg': "OK를 눌렀어용"}));
+            await g_webSocket.send(JSON.stringify({'method': 'msg', 'msg': my_id+"님이 OK를 눌렀어용"}));
         }
         function get_seller_list() {
             var inputMsgBox = document.getElementById("seller_list");
