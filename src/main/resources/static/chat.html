@@ -185,9 +185,9 @@
 
                 });
         }
-        function ok(){
+        async function ok(){
             console.log("ok");
-            g_webSocket.send("ok눌렀음");
+            await g_webSocket.send("ok눌렀음");
         }
         function get_seller_list() {
             var inputMsgBox = document.getElementById("seller_list");
