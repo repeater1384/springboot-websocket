@@ -8,8 +8,8 @@
         var g_webSocket = null;
         var my_id = null;
         var my_type = null;
-        // var basic_address = "localhost:8080"
-        var basic_address = "43.201.118.242:8080"
+        var basic_address = "localhost:8080"
+        // var basic_address = "43.201.118.242:8080"
 
         var websocket_address = "ws://" + basic_address + "/websocket";
         window.onload = async function () {
@@ -47,7 +47,16 @@
              * 웹소켓 메시지(From Server) 수신하는 경우 호출
              */
             g_webSocket.onmessage = function (message) {
-                addLineToChatBox(message.data);
+                // console.log(`서버로부터 응답받은 것! ${message}`)
+                console.log(`서버로부터 응답받은 것! ${message.data}`)
+                const data = JSON.parse(message.data)
+                console.log(`서버로부터 응답받은 것! ${data.method}`)
+
+                if(data.method == 'msg'){
+                    addLineToChatBox(data.content);
+                }else{
+                    location.href = 'https://webgyver.site/'
+                }
             };
 
             /**
@@ -157,9 +166,9 @@
                 return null;
             }
             axios
-                .get("http://"+basic_address+"/api/customer/list/" + my_id)
+                .get("http://" + basic_address + "/api/customer/list/" + my_id)
                 .then(function (result) {
-                    console.log(result.data);
+                    // console.log(result.data);
                     var data = result.data;
                     var trList = '';
                     for (var i = 0; i < data.length; i++) {
@@ -171,11 +180,11 @@
                         tr += '  <td>' + row.wido + '</td>';
                         tr += '  <td>' + row.gyungdo + '</td>';
                         tr += '  <td>' + row.dis + '</td>';
-                        tr += '  <td>' + '<button onclick="ok()">수락</button>' + '</td>';
+                        tr += '  <td>' + `<button onclick="go_webrtc(${row.id})">수락</button>` + '</td>';
                         tr += '</tr>';
                         trList += tr;
                     }
-                    console.log(trList);
+                    // console.log(trList);
                     custoemr_list.innerHTML = trList;
                 })
 
@@ -185,18 +194,21 @@
 
                 });
         }
-        async function ok(){
+
+        async function go_webrtc(id) {
             console.log("ok");
-            await g_webSocket.send(JSON.stringify({'method': 'msg', 'msg': my_id+"님이 OK를 눌렀어용"}));
+            // g_webSocket.send(JSON.stringify({'method': 'msg', 'msg': id+"님의 요청글을 " + my_id+"님이 OK를 눌렀어용 "}));
+            g_webSocket.send(JSON.stringify({'method': 'go', 'customer': id, 'seller': my_id}));
         }
+
         function get_seller_list() {
             var inputMsgBox = document.getElementById("seller_list");
             axios
-                .get("http://"+basic_address+"/api/seller/list")
+                .get("http://" + basic_address + "/api/seller/list")
                 .then(function (result) {
                     var data = result.data;
                     var ih = '';
-                    for(var i = 0 ; i<data.length;i++){
+                    for (var i = 0; i < data.length; i++) {
                         ih += data[i];
                     }
                     inputMsgBox.innerHTML = ih;

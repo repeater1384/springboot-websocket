@@ -1,10 +1,16 @@
-//package com.example.demo.test;
-//
-//import javax.websocket.EncodeException;
-//import javax.websocket.Session;
-//import java.io.IOException;
-//
-//public class Room {
+package com.example.demo.test;
+
+import lombok.Getter;
+import lombok.Setter;
+
+import javax.websocket.EncodeException;
+import javax.websocket.Session;
+import java.io.IOException;
+@Getter
+@Setter
+public class Room {
+    private String seller;
+    private String customer;
 //    public synchronized void join(Session session) {
 //        sessions.add(session);
 //    }
@@ -29,4 +35,4 @@
 //            e.printStackTrace();
 //        }
 //    }
-//}
+}

@@ -26,6 +26,7 @@ public class WebSocket {
     private static Set<String> customersSet = new HashSet<String>();
     private static Set<String> sellerSet = Collections.synchronizedSet(new HashSet<String>());
     private static Map<String, LocalTime> refreshMap = new HashMap<>();
+    private static Map<String, Room> roomMap = new HashMap<>();
 
     static Random random = new Random();
     static boolean runCheck = false;
@@ -64,13 +65,14 @@ public class WebSocket {
      * 웹소켓 메시지(From Client) 수신하는 경우 호출
      */
     @OnMessage
-    public String handleMessage(String jsonMessage, Session session) throws ParseException, IOException {
+    public void handleMessage(String jsonMessage, Session session) throws ParseException, IOException {
         if (session != null) {
             JSONParser parser = new JSONParser();
             JSONObject obj = (JSONObject) parser.parse(jsonMessage);
             System.out.println(jsonMessage);
             String method = obj.get("method").toString();
             Object object = null;
+            System.out.println(method + " 메세지 요청 받음");
             if (method.equals("init")) {
                 String id = obj.get("id").toString();
                 String name = obj.get("name").toString();
@@ -124,10 +126,15 @@ public class WebSocket {
                 }
                 sb.append(" : ").append(msg);
                 sendMessageToAll(sb.toString());
+            } else if (method.equals("go")) {
+                System.out.println("입장 요청");
+                String customerId = obj.get("customer").toString();
+                String sellerId = obj.get("seller").toString();
+                System.out.println(String.format("%s 님과 %s 님의 입장 요청", customerId, sellerId));
+                goWebRTC(sellerId, customerId);
             }
-            printInfo();
+//            printInfo();
         }
-        return null;
     }
 
 
@@ -172,11 +179,13 @@ public class WebSocket {
 
     public void printInfo() {
 
-        System.out.println(sessionSet);
-        System.out.println(customersSet);
-        System.out.println(sellerSet);
-        System.out.println(customerMap);
-        System.out.println(sellerMap);
+        System.out.println("sessionSet" + sessionSet);
+        System.out.println("customersSet" + customersSet);
+        System.out.println("sellerSet" + sellerSet);
+        System.out.println("customerMap" + customerMap);
+        System.out.println("sellerMap" + sellerMap);
+        System.out.println("sessionId2Obj" + sessionId2Obj);
+        System.out.println("sessionMap" + sessionMap);
         System.out.println("------------------------------");
     }
 
@@ -199,8 +208,7 @@ public class WebSocket {
     }
 
     public Set<Map<String, String>> getCustomerSet(String sellerId) {
-        System.out.println(refreshMap);
-
+//        printInfo();
         Set<Map<String, String>> result = new HashSet<>();
         Seller seller = sellerMap.get(sellerId);
         String wido1 = seller.getWido();
@@ -245,11 +253,53 @@ public class WebSocket {
             if (!singleSession.isOpen()) {
                 continue;
             }
-            singleSession.getAsyncRemote().sendText(message);
+            JSONObject send = new JSONObject();
+            send.put("method", "msg");
+            send.put("content",message);
+            singleSession.getAsyncRemote().sendText(send.toJSONString());
+
         }
 
         return true;
     }
 
+    private void goWebRTC(String sId, String cId) {
+        Session session = null;
+        for (String sessionId : sessionId2Obj.keySet()) {
+            Object obj = sessionId2Obj.get(sessionId);
+            if ((obj instanceof Customer && ((Customer) obj).getId().equals(cId)) || (obj instanceof Seller && ((Seller) obj).getId().equals(sId))) {
+
+                session = sessionMap.get(sessionId);
+                System.out.println(session);
+                JSONObject send = new JSONObject();
+                send.put("method", "go");
+                send.put("link", "gogogo");
+                session.getAsyncRemote().sendText(send.toJSONString());
+            }
+        }
+    }
+//        for (String key : sellerMap.keySet()) {
+//            if (sId.equals(sellerMap.get(key).getId())) {
+//                session = sessionMap.get(key);
+//                System.out.println(session);
+////                JSONObject send = new JSONObject();
+////                send.put("method", "go");
+////                session.getAsyncRemote().sendObject(send);
+//                break;
+//            }
+//        }
+//
+//        for (String key : customerMap.keySet()) {
+//            if (cId.equals(customerMap.get(key).getId())) {
+//                session = sessionMap.get(key);
+//                System.out.println("2"+session);
+////                JSONObject send = new JSONObject();
+////                send.put("method", "go");
+////                session.getAsyncRemote().sendObject(send);
+//                break;
+//            }
+//        }
 
 }
+
+
